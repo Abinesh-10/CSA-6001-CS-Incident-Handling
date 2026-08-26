@@ -1,0 +1,603 @@
+┌──(kali㉿kali)-[~]
+└─$ rm lab_output.txt
+                                                                                                                                                                                                                    
+┌──(kali㉿kali)-[~]
+└─$ ls                   
+Desktop  Documents  Downloads  example.com  Music  Pictures  Public  Templates  test1  test1.txt  test.txt  Videos
+                                                                                                                                                                                                                    
+┌──(kali㉿kali)-[~]
+└─$ script lab_output.txt
+Script started, output log file is 'lab_output.txt'.
+┌──(kali㉿kali)-[~]
+└─$ ls
+Desktop  Documents  Downloads  example.com  lab_output.txt  Music  Pictures  Public  Templates  test1  test1.txt  test.txt  Videos
+                                                                                                                                                                                                                    
+┌──(kali㉿kali)-[~]
+└─$ touch lab.txt 
+                                                                                                                                                                                                                    
+┌──(kali㉿kali)-[~]
+└─$ ls
+Desktop  Documents  Downloads  example.com  lab_output.txt  lab.txt  Music  Pictures  Public  Templates  test1  test1.txt  test.txt  Videos
+                                                                                                                                                                                                                    
+┌──(kali㉿kali)-[~]
+└─$ mousepad lab.txt        
+^C                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ mousepad lab.txt
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ cat lab.txt       
+hi
+hello
+hey
+ho
+hum
+haha
+chi
+cha
+chu
+thi
+khi
+kho
+kham
+kaha
+tha
+ti
+thu
+thaha
+ec
+echi
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ tail lab.txt  
+khi
+kho
+kham
+kaha
+tha
+ti
+thu
+thaha
+ec
+echi
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ head lab.txt 
+hi
+hello
+hey
+ho
+hum
+haha
+chi
+cha
+chu
+thi
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ mv lab.txt lab1.txt          
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ ls
+Desktop  Documents  Downloads  example.com  lab1.txt  lab_output.txt  Music  Pictures  Public  Templates  test1  test1.txt  test.txt  Videos
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ history     
+    1  ls
+    2  exit
+    3  ls
+    4  exit
+    5  pwd
+    6  ls
+    7  ls-1
+    8  ls -l
+    9  ls -la
+   10  cd Documents
+   11  cd ..
+   12  cd
+   13  mkdir CyberSecurity
+   14  cd CyberSecurity
+   15  cd
+   16  touch notes.txt
+   17  ls
+   18  mousepad notes.txt
+   19  cp notes.txt backup.txt
+   20  mousepad backup.txt
+   21  mv notes.txt linux_notes.txt
+   22  mv linux_notes.txt Documents/
+   23  mousepad Documents
+   24  cd Documents
+   25  mousepad linux_notes.txt
+   26  rm linux_notes.txt
+   27  cd
+   28  cd Documents
+   29  mousepad linux_notes.txt
+   30  cd
+   31  rmdir CyberSecurity
+   32  pwd
+   33  ls
+   34  sudo apt install unzip
+   35  unzip -v
+   36  ip a
+   37  ip route
+   38  clear
+   39  sudo poweroff
+   40  pwd
+   41  ls
+   42  ls-1
+   43  ls -l
+   44  ls -la
+   45  cd Documents
+   46  cd ..
+   47  cd
+   48  mkdir CyberSecurity
+   49  cd CyberSecurity
+   50  cd
+   51  touch notes.txt
+   52  ls
+   53  mousepad notes.txt
+   54  cp notes.txt backup.txt
+   55  mousepad backup.txt
+   56  mv notes.txt linux_notes.txt
+   57  mv linux_notes.txt Documents/
+   58  mousepad Documents
+   59  cd Documents
+   60  mousepad linux_notes.txt
+   61  rm linux_notes.txt
+   62  cd
+   63  cd Documents
+   64  mousepad linux_notes.txt
+   65  cd
+   66  rmdir CyberSecurity
+   67  pwd
+   68  ls
+   69  sudo apt install unzip
+   70  unzip -v
+   71  ip a
+   72  ip route
+   73  clear
+   74  sudo poweroff
+   75  mv backup.txt Documents/
+   76  mv backup.txt file.txt
+   77  cd Documents
+   78  mv backup.txt file.txt
+   79  cat file.txt
+   80  less file.txt
+   81  cd Documents
+   82  cat file.txt
+   83  head file.txt
+   84  tail file,txt
+   85  tail file.txt
+   86  tail -f log.txt
+   87  tail -f file.txt
+   88  nano file.txt
+   89  cd Documents
+   90  rm cd
+   91  sudo poweroff
+   92  cd Documents
+   93  file file.txt
+   94  stat file.txt
+   95  cat file.txt
+   96  cd
+   97  find . -name "*.txt"
+   98  locate file.txt
+   99  cd Documents
+  100  locate file.txt
+  101  cd
+  102  which python3
+  103  whereis python3
+  104  cd Documents
+  105  grep hello file.txt
+  106  mousepad filetxt
+  107  mousepad file.txt
+  108  grep hello file.txt
+  109  grep allah file.txt
+  110  grep Allah file.txt
+  111  grep -i linux file.txt
+  112  grep -Allah linux file.txt
+  113  grep -A linux file.txt
+  114  grep -i Allah file.txt
+  115  whoami
+  116  id
+  117  who
+  118  cd
+  119  sudo command
+  120  ps
+  121  ps aux
+  122  top
+  123  ntop
+  124  htop
+  125  ip a
+  126  ip route
+  127  ping google.com
+  128  hostname
+  129  hostname -I
+  130  ss -tuln
+  131  ping google.com
+  132  arp -a
+  133  traceroute google.com
+  134  nslookup google.com
+  135  uname - a
+  136  uname -a
+  137  hostnamectl
+  138  df -h
+  139  du -sh Documents
+  140  free -h
+  141  uptime
+  142  date
+  143  cal
+  144  history
+  145  sudo apt update
+  146  cd Documents
+  147  zip files.zip file.txt
+  148  unzip files.zip
+  149  zip file.txt
+  150  zip archive.txt file.txt
+  151  unzip archive.zip
+  152  rm file.txt.save
+  153  rm files.zip
+  154  rm archive.zip
+  155  rm archive.txt
+  156  history
+  157  sudo apt install nmap
+  158  nmap -h
+  159  ip a
+  160  sudo nmap -sp 10.0.2.15/24
+  161  sudo nmap -sP 10.0.2.15
+  162  sudo nmap -sP 10.0.2.15/24
+  163  sudo nmap 10.0.2.15/24
+  164  sudo nmap 10.0.2.15
+  165  sudo nmap -O 10.0.2.15
+  166  sudo nmap -sV 10.0.2.15
+  167  sudo nmap -A 10.0.2.15
+  168  sudo nmap -A -T5 1-1000 10.0.2.15
+  169  sudo nmap -A -T5 -P 1-1000 10.0.2.15
+  170  ss -tuln
+  171  sudo apt update
+  172  ping -c 4 google.com
+  173  cat /etc/apt/sources.list
+  174  sudo poweroff
+  175  sudo rm -rf /var/lib/apt/lists/*
+  176  sudo apt clean
+  177  sudo apt update
+  178  sudo nano /etc/apt/sources.list
+  179  sudo apt update
+  180  sudo nano /etc/apt/sources.list
+  181  sudo apt update
+  182  ip a
+  183  sudo nmap -sP 10.0.2.15/24
+  184  sudo nmap 10.02.15/24
+  185  sudo nmap -A -T5 -P 1-1000 10.0.2.15
+  186  sudo nmap -O 10.0.2.15
+  187  sudo nmap -sV 10.0.2.15
+  188  sudo nmap -sC 10.0.2.15
+  189  sudo nmap -v 10.0.2.15
+  190  nmap -sP 10.0.2.15/24
+  191  nmap 10.0.2.15
+  192  clear
+  193  history
+  194  clear
+  195  sudo poweroff
+  196  ss -tuln
+  197  ss -tulpn
+  198  hotsnamectl
+  199  hostenamectl
+  200  hostename ctl
+  201  systemctl start ssh
+  202  sudo apt list openssh-server
+  203  -a
+  204  ip -a
+  205  ss -tuln
+  206  apt install openssh-server
+  207  sudo apt install openssh-server
+  208  sudo apt autoremove
+  209  sudo apt clean
+  210  sudo reboot
+  211  ss -tuln
+  212  ip a
+  213  ss -a
+  214  systemctl --type=service --state=running
+  215  systemctl status ssh
+  216  sudo systemctl start ssh
+  217  ss -tulln
+  218  ss -tuln
+  219  sudo nmap -sP 10.0.2.15/24
+  220  nmap -O 10.0.2.15
+  221  nmap -sV 10.0.2.15
+  222  nmap -sC 10.0.2.15
+  223  nmap -A 10.0.2.15
+  224  nmap -A -T5 -p 1-100 10.0.2.15
+  225  nmap -p 10.0.2.15
+  226  nmap -P 10.0.2.15
+  227  nmap -V 10.0.2.15
+  228  nmap -P 80 10.0.2.15
+  229  nmap -P 22 10.0.2.15
+  230  nmap -sn 10.0.2.15/24
+  231  nmap 10.0.2.15/24
+  232  nmap -P 3306 10.0.2.15
+  233  nmap -sS 10.0.2.15
+  234  nmap -sT 10.0.2.15
+  235  nmap -sU 10.0.2.15
+  236  nmap localhost
+  237  nmap -v 10.0.2.15
+  238  nmap -vv 10.0.2.15
+  239  nmap -oN scan.txt 10.0.2.15
+  240  nmap -oN file.txt 10.0.2.15
+  241  ls
+  242  cat scan.txt
+  243  ca file.txt
+  244  cat file.txt
+  245  nmap -oX scan,txt 10.0.2.15
+  246  ls
+  247  cat scan,txt
+  248  nmap 10.0.2.15 10.0.2.20
+  249  nmap -iL file.txt
+  250  nmap -sA 10.0.2.15
+  251  nmap -T4 10.0.2.15
+  252  nmap -T5 10.0.2.15
+  253  rm file.txt
+  254  cat file.txt
+  255  rm scan.txt
+  256  cat scan.txt
+  257  rm scan,txt
+  258  cat scan,txt
+  259  ls
+  260  cd Documents
+  261  ls
+  262  cat file.txt
+  263  touch rm.txt
+  264  mousepad rm.txt
+  265  cat rm.txt
+  266  cd..
+  267  cd
+  268  pwd
+  269  /root
+  270  /etc
+  271  ls
+  272  cd
+  273  /
+  274  ls
+  275  cd
+  276  /var
+  277  ls
+  278  /tmp
+  279  ls
+  280  cd
+  281  /tmp
+  282  ls
+  283  cd
+  284  /usr
+  285  ls
+  286  cat lib
+  287  cd lib
+  288  ls
+  289  cat cups
+  290  cd cups
+  291  ls
+  292  cat backend
+  293  cd backend
+  294  ls
+  295  cd smb
+  296  cat smb
+  297  clear
+  298  cd
+  299  /bin
+  300  ls
+  301  cd fcat
+  302  cat fcat
+  303  cd
+  304  cd/sbin
+  305  /sbin
+  306  ls
+  307  cd
+  308  /lib
+  309  ls
+  310  cat compat-ld
+  311  cd compat-ld
+  312  ls
+  313  cd ld
+  314  cat ld
+  315  clear
+  316  cd
+  317  /opt
+  318  ls
+  319  cd microsoft
+  320  ls
+  321  cd powershell
+  322  ls
+  323  cat 7
+  324  cd 7
+  325  ls
+  326  cat pwsh.dll
+  327  clear
+  328  cd
+  329  /boot
+  330  ls
+  331  cd grub
+  332  ls
+  333  cd fonts
+  334  ls
+  335  cat unicode.pf2
+  336  clear
+  337  cd
+  338  clear
+  339  poweroff
+  340  sudo poweroff
+  341  history
+  342  ip a
+  343  sudo nmap 10.0.2.15/24
+  344  ss -tuln 
+  345  clear
+  346  sudo poweroff
+  347  ls
+  348  cd Documents
+  349  exit
+  350  ls
+  351  cd lab_output.txt
+  352  exit
+  353  script lab_output.txt
+  354  cat script lab_output.txt
+  355  clear
+  356  rm lab_output.txt
+  357  ls
+  358  clear
+  359  script lab_output.txt
+  360  sudo poweroff
+  361  sudo apt update
+  362  sudo apt install -y --reinstall virtualbox-guest-x11 virtualbox-guest-utils virtualbox-guest-dkms
+  363  sudo apt install -y --reinstall virtualbox-guest-x11 virtualbox-guest-utils
+  364  sudo reboot
+  365  cat lab_output.txt
+  366  rm lab_output.txt
+  367  ls
+  368  touch test.txt
+  369  ls
+  370  mousepad test.txt
+  371  cat test.txt
+  372  mkdir test1
+  373  ls
+  374  mv test.txt test1.txt
+  375  ls
+  376  uptime
+  377  more test1.txt
+  378  date
+  379  cd Pictures
+  380  cd
+  381  users
+  382  wget -r https://example.com/
+  383  pwd
+  384  head test1.txt
+  385  tail test1.txt
+  386  sort test1.txt
+  387  rm test1.txt
+  388  ls
+  389  history
+  390  touch test.txt
+  391  mousepad test.txt
+  392  cp test.txt test1.txt
+  393  ls
+  394  tail test1.txt
+  395  head test.tst
+  396  head test.txt
+  397  cat test1.txt
+  398  exit
+  399  script lab_output.txt
+  400  cat lab_output.txt
+  401  sudo poweroff
+  402  script lab_output.txt
+  403  clear
+  404  cat lab_output.txt
+  405  ls
+  406  touch lab.txt
+  407  ls
+  408  mousepad lab.txt
+  409  cat lab.txt
+  410  tail lab.txt
+  411  head lab.txt
+  412  mv lab.txt lab1.txt
+  413  ls
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ uptime
+ 01:29:41 up 54 min,  1 user,  load average: 0.30, 0.49, 0.44
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ date
+Wed Jul 22 01:29:43 AM EDT 2026
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ cd Pictures
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~/Pictures]
+└─$ cd         
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ pwd
+/home/kali
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ wget https://example.com    
+--2026-07-22 01:30:15--  https://example.com/
+Resolving example.com (example.com)... 172.66.147.243, 104.20.23.154, 2606:4700:83b5:72db:f2fe:623:ef6b:ff98
+Connecting to example.com (example.com)|172.66.147.243|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/html]
+Saving to: ‘index.html’
+
+index.html                                                     [ <=>                                                                                                                                     ]     559  --.-KB/s    in 0.001s  
+
+2026-07-22 01:30:16 (1.02 MB/s) - ‘index.html’ saved [559]
+
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ user  
+Command 'user' not found, did you mean:
+  command 'fuser' from deb psmisc
+  command 'iuser' from deb ipmiutil
+  command 'users' from deb coreutils
+  command 'userv' from deb userv
+Try: sudo apt install <deb name>
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ users
+kali
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ whoami                  
+kali
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ sort lab1.txt        
+cha
+chi
+chu
+ec
+echi
+haha
+hello
+hey
+hi
+ho
+hum
+kaha
+kham
+khi
+kho
+tha
+thaha
+thi
+thu
+ti
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ rm test1.txt
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ cp lab1.txt test.txt 
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ cat test.txt        
+hi
+hello
+hey
+ho
+hum
+haha
+chi
+cha
+chu
+thi
+khi
+kho
+kham
+kaha
+tha
+ti
+thu
+thaha
+ec
+echi
+                                                                                                                                                                                                                                            
+┌──(kali㉿kali)-[~]
+└─$ exit
+Script done
