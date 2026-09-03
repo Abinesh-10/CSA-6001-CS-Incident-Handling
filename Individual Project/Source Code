@@ -1,0 +1,635 @@
+"""
+================================================================================
+ ENTERPRISE CYBERSECURITY INCIDENT ESCALATION MATRIX & COMMUNICATION FRAMEWORK
+================================================================================
+Author   : Abx (IIT Madras BSDS)
+Purpose  : Model, simulate, validate and visualise a severity-tiered incident
+           escalation matrix for an enterprise Security Operations Centre
+           (SOC), aligned with NIST SP 800-61 Rev.2 and ISO/IEC 27035.
+
+Run target: Google Colab (pure-Python, only pandas / numpy / matplotlib —
+            all pre-installed on Colab, no pip install needed).
+================================================================================
+"""
+
+# ------------------------------------------------------------------------
+# 0. IMPORTS
+# ------------------------------------------------------------------------
+import random
+import textwrap
+import statistics
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum, IntEnum
+from typing import List, Dict, Optional
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
+random.seed(42)
+np.random.seed(42)
+
+# ------------------------------------------------------------------------
+# 1. DOMAIN MODEL — SEVERITY LEVELS
+# ------------------------------------------------------------------------
+class Severity(IntEnum):
+    """Lower integer = higher severity (SEV1 is worst)."""
+    SEV1_CRITICAL = 1   # e.g. active ransomware, data exfiltration, outage of core service
+    SEV2_HIGH     = 2   # e.g. confirmed intrusion contained to one segment, malware outbreak
+    SEV3_MEDIUM   = 3   # e.g. phishing campaign, policy violation, suspicious anomaly
+    SEV4_LOW      = 4   # e.g. informational alert, failed login spikes, false-positive triage
+
+    def label(self) -> str:
+        return {
+            Severity.SEV1_CRITICAL: "SEV-1 Critical",
+            Severity.SEV2_HIGH:     "SEV-2 High",
+            Severity.SEV3_MEDIUM:   "SEV-3 Medium",
+            Severity.SEV4_LOW:      "SEV-4 Low",
+        }[self]
+
+
+class Channel(str, Enum):
+    PAGERDUTY   = "PagerDuty / SIEM auto-page"
+    PHONE       = "Direct phone call"
+    SMS         = "SMS / push alert"
+    SLACK_WAR   = "Slack #incident-warroom (bridge)"
+    EMAIL       = "Email (distribution list)"
+    STATUS_PAGE = "Internal status page update"
+    PRESS       = "Press release / PR statement"
+    REGULATOR   = "Regulator notification portal"
+
+
+# ------------------------------------------------------------------------
+# 2. THE ESCALATION MATRIX  (the central design artifact)
+# ------------------------------------------------------------------------
+@dataclass
+class EscalationTier:
+    severity: Severity
+    primary_owner: str                       # first responder role
+    ack_sla_minutes: int                      # time allowed to acknowledge
+    resolution_target_hours: float            # target time to resolution/containment
+    auto_escalate_after_minutes: int          # if not ack'd, auto-escalate to next tier
+    escalation_contact: str                   # who it escalates to
+    channels: List[Channel]
+    management_involvement: str               # who must be looped in
+    external_notification_required: bool
+    external_notification_deadline_hours: Optional[float]
+    external_bodies: List[str]
+
+
+ESCALATION_MATRIX: Dict[Severity, EscalationTier] = {
+
+    Severity.SEV1_CRITICAL: EscalationTier(
+        severity=Severity.SEV1_CRITICAL,
+        primary_owner="L1 SOC Analyst (on-call)",
+        ack_sla_minutes=5,
+        resolution_target_hours=4,
+        auto_escalate_after_minutes=10,
+        escalation_contact="Incident Commander (IC) + CISO",
+        channels=[Channel.PAGERDUTY, Channel.PHONE, Channel.SLACK_WAR, Channel.SMS],
+        management_involvement="CISO, CIO/CTO, Legal Counsel, CEO (briefed within 1 hr)",
+        external_notification_required=True,
+        external_notification_deadline_hours=72,   # e.g. GDPR Art. 33 breach clock
+        external_bodies=["Data Protection Authority", "CERT-In", "Affected customers", "Cyber-insurance carrier"],
+    ),
+
+    Severity.SEV2_HIGH: EscalationTier(
+        severity=Severity.SEV2_HIGH,
+        primary_owner="L2 SOC Analyst",
+        ack_sla_minutes=15,
+        resolution_target_hours=8,
+        auto_escalate_after_minutes=30,
+        escalation_contact="SOC Team Lead + Security Manager",
+        channels=[Channel.PAGERDUTY, Channel.SLACK_WAR, Channel.EMAIL],
+        management_involvement="Security Manager, IT Director (briefed within 4 hrs)",
+        external_notification_required=True,
+        external_notification_deadline_hours=None,  # only if scope grows (contingent)
+        external_bodies=["CERT-In (if data exposure confirmed)"],
+    ),
+
+    Severity.SEV3_MEDIUM: EscalationTier(
+        severity=Severity.SEV3_MEDIUM,
+        primary_owner="L1 SOC Analyst",
+        ack_sla_minutes=30,
+        resolution_target_hours=24,
+        auto_escalate_after_minutes=60,
+        escalation_contact="SOC Team Lead",
+        channels=[Channel.SLACK_WAR, Channel.EMAIL],
+        management_involvement="Security Manager (daily digest)",
+        external_notification_required=False,
+        external_notification_deadline_hours=None,
+        external_bodies=[],
+    ),
+
+    Severity.SEV4_LOW: EscalationTier(
+        severity=Severity.SEV4_LOW,
+        primary_owner="L1 SOC Analyst / Automated triage",
+        ack_sla_minutes=120,
+        resolution_target_hours=72,
+        auto_escalate_after_minutes=240,
+        escalation_contact="SOC Team Lead (weekly review)",
+        channels=[Channel.EMAIL, Channel.STATUS_PAGE],
+        management_involvement="None (logged for trend analysis)",
+        external_notification_required=False,
+        external_notification_deadline_hours=None,
+        external_bodies=[],
+    ),
+}
+
+
+def print_escalation_matrix() -> pd.DataFrame:
+    """Render the escalation matrix as a tidy DataFrame (the deliverable table)."""
+    rows = []
+    for sev, tier in ESCALATION_MATRIX.items():
+        rows.append({
+            "Severity": sev.label(),
+            "Primary Owner": tier.primary_owner,
+            "Ack. SLA (min)": tier.ack_sla_minutes,
+            "Resolution Target (hrs)": tier.resolution_target_hours,
+            "Auto-escalate after (min)": tier.auto_escalate_after_minutes,
+            "Escalates To": tier.escalation_contact,
+            "Comm. Channels": ", ".join(c.value for c in tier.channels),
+            "Management Involvement": tier.management_involvement,
+            "External Notification": (
+                f"Required (≤{tier.external_notification_deadline_hours}h): {', '.join(tier.external_bodies)}"
+                if tier.external_notification_required and tier.external_notification_deadline_hours
+                else ("Contingent: " + ", ".join(tier.external_bodies) if tier.external_notification_required
+                      else "Not required")
+            ),
+        })
+    df = pd.DataFrame(rows)
+    return df
+
+
+# ------------------------------------------------------------------------
+# 3. INCIDENT LIFECYCLE MODEL
+# ------------------------------------------------------------------------
+class IncidentStatus(str, Enum):
+    OPEN = "Open"
+    ACKNOWLEDGED = "Acknowledged"
+    ESCALATED = "Escalated"
+    CONTAINED = "Contained"
+    RESOLVED = "Resolved"
+
+
+@dataclass
+class Incident:
+    incident_id: str
+    title: str
+    severity: Severity
+    detected_at: datetime
+    status: IncidentStatus = IncidentStatus.OPEN
+    current_tier: Severity = None
+    acknowledged_at: Optional[datetime] = None
+    resolved_at: Optional[datetime] = None
+    escalation_log: List[str] = field(default_factory=list)
+    communication_log: List[str] = field(default_factory=list)
+    external_notification_sent: bool = False
+
+    def __post_init__(self):
+        if self.current_tier is None:
+            self.current_tier = self.severity
+
+    # -- convenience metrics -----------------------------------------
+    def time_to_ack_minutes(self) -> Optional[float]:
+        if self.acknowledged_at is None:
+            return None
+        return (self.acknowledged_at - self.detected_at).total_seconds() / 60
+
+    def time_to_resolve_hours(self) -> Optional[float]:
+        if self.resolved_at is None:
+            return None
+        return (self.resolved_at - self.detected_at).total_seconds() / 3600
+
+
+# ------------------------------------------------------------------------
+# 4. THE ESCALATION / COMMUNICATION ENGINE
+# ------------------------------------------------------------------------
+class IncidentEscalationEngine:
+    """
+    Drives incidents through the escalation matrix, fires the right
+    communication channels at the right tier, auto-escalates breached
+    SLAs, and tracks external/regulatory notification obligations.
+    """
+
+    def __init__(self, matrix: Dict[Severity, EscalationTier]):
+        self.matrix = matrix
+        self.incidents: Dict[str, Incident] = {}
+        self.audit_trail: List[str] = []
+
+    # ---- logging -----------------------------------------------------
+    def _log(self, msg: str):
+        self.audit_trail.append(msg)
+
+    # ---- incident intake ----------------------------------------------
+    def report_incident(self, incident_id: str, title: str, severity: Severity,
+                         detected_at: datetime) -> Incident:
+        inc = Incident(incident_id=incident_id, title=title, severity=severity,
+                        detected_at=detected_at)
+        self.incidents[incident_id] = inc
+        tier = self.matrix[inc.current_tier]
+        self._notify(inc, tier, event="INCIDENT REPORTED")
+        self._log(f"[{detected_at:%Y-%m-%d %H:%M}] {incident_id} reported "
+                   f"({severity.label()}) -> routed to {tier.primary_owner}")
+        return inc
+
+    # ---- communication --------------------------------------------------
+    def _notify(self, inc: Incident, tier: EscalationTier, event: str):
+        for ch in tier.channels:
+            entry = f"{event}: {inc.incident_id} via [{ch.value}] -> {tier.escalation_contact}"
+            inc.communication_log.append(entry)
+
+    # ---- acknowledgement -------------------------------------------------
+    def acknowledge(self, incident_id: str, ack_time: datetime, by: str):
+        inc = self.incidents[incident_id]
+        inc.acknowledged_at = ack_time
+        inc.status = IncidentStatus.ACKNOWLEDGED
+        self._log(f"[{ack_time:%Y-%m-%d %H:%M}] {incident_id} acknowledged by {by} "
+                   f"(after {inc.time_to_ack_minutes():.1f} min)")
+
+    # ---- SLA sweep / auto-escalation --------------------------------------
+    def check_and_escalate(self, now: datetime):
+        """Call periodically (e.g. every minute in a real system) to auto-escalate
+        any incident whose acknowledgement SLA has been breached."""
+        for inc in self.incidents.values():
+            if inc.status not in (IncidentStatus.OPEN,):
+                continue
+            tier = self.matrix[inc.current_tier]
+            elapsed = (now - inc.detected_at).total_seconds() / 60
+            if elapsed > tier.auto_escalate_after_minutes and inc.acknowledged_at is None:
+                self._escalate(inc, now)
+
+    def _escalate(self, inc: Incident, now: datetime):
+        prev_sev = inc.current_tier
+        # escalate to the next-more-severe tier that still exists (never below SEV1)
+        new_level = max(1, int(prev_sev) - 1)
+        new_sev = Severity(new_level)
+        inc.current_tier = new_sev
+        inc.status = IncidentStatus.ESCALATED
+        tier = self.matrix[new_sev]
+        inc.escalation_log.append(
+            f"{now:%Y-%m-%d %H:%M} auto-escalated {prev_sev.label()} -> {new_sev.label()} "
+            f"(ack SLA breached) -> now owned by {tier.escalation_contact}"
+        )
+        self._notify(inc, tier, event="AUTO-ESCALATION (SLA BREACH)")
+        self._log(f"[{now:%Y-%m-%d %H:%M}] {inc.incident_id} ESCALATED "
+                   f"{prev_sev.label()} -> {new_sev.label()}")
+        self._check_external_notification(inc, now)
+
+    # ---- external / regulatory notification -------------------------------
+    def _check_external_notification(self, inc: Incident, now: datetime):
+        tier = self.matrix[inc.current_tier]
+        if tier.external_notification_required and not inc.external_notification_sent:
+            inc.external_notification_sent = True
+            inc.communication_log.append(
+                f"EXTERNAL NOTIFICATION triggered for {inc.incident_id}: "
+                f"{', '.join(tier.external_bodies)} "
+                f"(deadline {tier.external_notification_deadline_hours}h from detection)"
+                if tier.external_notification_deadline_hours else
+                f"EXTERNAL NOTIFICATION (contingent) queued for {inc.incident_id}: "
+                f"{', '.join(tier.external_bodies)}"
+            )
+            self._log(f"[{now:%Y-%m-%d %H:%M}] {inc.incident_id} -> external "
+                       f"notification workflow triggered")
+
+    # ---- resolution --------------------------------------------------
+    def resolve(self, incident_id: str, resolved_at: datetime):
+        inc = self.incidents[incident_id]
+        inc.resolved_at = resolved_at
+        inc.status = IncidentStatus.RESOLVED
+        self._log(f"[{resolved_at:%Y-%m-%d %H:%M}] {incident_id} RESOLVED "
+                   f"(total time {inc.time_to_resolve_hours():.2f} h)")
+
+    # ---- reporting --------------------------------------------------
+    def summary_dataframe(self) -> pd.DataFrame:
+        rows = []
+        for inc in self.incidents.values():
+            tier = self.matrix[inc.severity]
+            rows.append({
+                "Incident ID": inc.incident_id,
+                "Title": inc.title,
+                "Initial Severity": inc.severity.label(),
+                "Final Tier": inc.current_tier.label(),
+                "Status": inc.status.value,
+                "Ack SLA (min)": tier.ack_sla_minutes,
+                "Time to Ack (min)": round(inc.time_to_ack_minutes(), 1) if inc.time_to_ack_minutes() is not None else None,
+                "SLA Breached": (inc.time_to_ack_minutes() is None or
+                                 inc.time_to_ack_minutes() > tier.ack_sla_minutes),
+                "Escalated": len(inc.escalation_log) > 0,
+                "Time to Resolve (h)": round(inc.time_to_resolve_hours(), 2) if inc.time_to_resolve_hours() is not None else None,
+                "External Notification": inc.external_notification_sent,
+            })
+        return pd.DataFrame(rows)
+
+
+# ------------------------------------------------------------------------
+# 5. SIMULATION — generate a realistic incident stream and run it
+#    through the engine to validate the framework end-to-end.
+# ------------------------------------------------------------------------
+def simulate(n_incidents: int = 60, seed: int = 42) -> "tuple[IncidentEscalationEngine, pd.DataFrame]":
+    random.seed(seed)
+    engine = IncidentEscalationEngine(ESCALATION_MATRIX)
+
+    start = datetime(2026, 1, 6, 9, 0)
+    severities = list(Severity)
+    # Realistic mix: most alerts are low/medium, few are true SEV1 crises
+    weights = {Severity.SEV1_CRITICAL: 0.05, Severity.SEV2_HIGH: 0.15,
+               Severity.SEV3_MEDIUM: 0.35, Severity.SEV4_LOW: 0.45}
+
+    incident_titles = {
+        Severity.SEV1_CRITICAL: ["Ransomware encryption detected on file server",
+                                  "Confirmed data exfiltration via C2 channel",
+                                  "Domain controller compromised"],
+        Severity.SEV2_HIGH: ["Malware outbreak on endpoint subnet",
+                              "Unauthorized privileged account use",
+                              "Web application SQLi exploitation attempt (successful)"],
+        Severity.SEV3_MEDIUM: ["Targeted phishing campaign against finance team",
+                                "Policy violation: unencrypted USB transfer",
+                                "Suspicious lateral movement alert"],
+        Severity.SEV4_LOW: ["Repeated failed VPN logins",
+                             "Informational IDS signature match",
+                             "False-positive AV detection"],
+    }
+
+    for i in range(1, n_incidents + 1):
+        sev = random.choices(severities, weights=[weights[s] for s in severities])[0]
+        detected_at = start + timedelta(minutes=random.randint(0, 60 * 24 * 14))  # 2-week window
+        inc_id = f"INC-{2026}{i:04d}"
+        title = random.choice(incident_titles[sev])
+        engine.report_incident(inc_id, title, sev, detected_at)
+
+        tier = ESCALATION_MATRIX[sev]
+
+        # Simulate human response behaviour: mostly within SLA, occasionally late
+        # (later severities are staffed less tightly -> slightly higher breach chance)
+        breach_prob = {Severity.SEV1_CRITICAL: 0.08, Severity.SEV2_HIGH: 0.15,
+                        Severity.SEV3_MEDIUM: 0.20, Severity.SEV4_LOW: 0.30}[sev]
+
+        if random.random() < breach_prob:
+            # Analyst is late -> ack happens after auto-escalate would have fired
+            ack_delay = tier.auto_escalate_after_minutes + random.randint(5, 90)
+            # run the SLA sweep at the escalation boundary to trigger auto-escalation
+            engine.check_and_escalate(detected_at + timedelta(minutes=tier.auto_escalate_after_minutes + 1))
+        else:
+            ack_delay = random.randint(1, tier.ack_sla_minutes)
+
+        ack_time = detected_at + timedelta(minutes=ack_delay)
+        engine.acknowledge(inc_id, ack_time, by=tier.primary_owner)
+
+        resolve_hours = np.random.gamma(shape=2.0, scale=tier.resolution_target_hours / 2.5)
+        resolve_time = ack_time + timedelta(hours=max(0.25, resolve_hours))
+        engine.resolve(inc_id, resolve_time)
+
+    df = engine.summary_dataframe()
+    return engine, df
+
+
+# ------------------------------------------------------------------------
+# 6. METRICS
+# ------------------------------------------------------------------------
+def compute_kpis(df: pd.DataFrame) -> pd.DataFrame:
+    grouped = df.groupby("Initial Severity").agg(
+        Incidents=("Incident ID", "count"),
+        Mean_Time_To_Ack_min=("Time to Ack (min)", "mean"),
+        SLA_Breach_Rate_pct=("SLA Breached", lambda s: 100 * s.mean()),
+        Escalation_Rate_pct=("Escalated", lambda s: 100 * s.mean()),
+        Mean_Time_To_Resolve_hr=("Time to Resolve (h)", "mean"),
+    ).round(2)
+    order = ["SEV-1 Critical", "SEV-2 High", "SEV-3 Medium", "SEV-4 Low"]
+    grouped = grouped.reindex(order)
+    return grouped
+
+
+# ------------------------------------------------------------------------
+# 7. VISUALISATIONS
+# ------------------------------------------------------------------------
+SEV_COLORS = {
+    "SEV-1 Critical": "#C0392B",
+    "SEV-2 High":     "#E67E22",
+    "SEV-3 Medium":   "#F1C40F",
+    "SEV-4 Low":      "#27AE60",
+}
+
+
+def plot_incident_distribution(df: pd.DataFrame, outpath: str):
+    counts = df["Initial Severity"].value_counts().reindex(
+        ["SEV-1 Critical", "SEV-2 High", "SEV-3 Medium", "SEV-4 Low"])
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    bars = ax.bar(counts.index, counts.values,
+                   color=[SEV_COLORS[c] for c in counts.index])
+    ax.bar_label(bars, padding=3)
+    ax.set_title("Simulated Incident Volume by Severity Tier (2-week window)")
+    ax.set_ylabel("Number of Incidents")
+    ax.set_xlabel("Severity")
+    plt.tight_layout()
+    plt.savefig(outpath, dpi=150)
+    plt.show()
+
+
+def plot_sla_breach_rate(kpi_df: pd.DataFrame, outpath: str):
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    bars = ax.bar(kpi_df.index, kpi_df["SLA_Breach_Rate_pct"],
+                   color=[SEV_COLORS[i] for i in kpi_df.index])
+    ax.bar_label(bars, fmt="%.1f%%", padding=3)
+    ax.set_title("Acknowledgement-SLA Breach Rate by Severity Tier")
+    ax.set_ylabel("Breach Rate (%)")
+    ax.set_ylim(0, max(kpi_df["SLA_Breach_Rate_pct"].max() * 1.3, 10))
+    plt.tight_layout()
+    plt.savefig(outpath, dpi=150)
+    plt.show()
+
+
+def plot_ack_vs_resolve(kpi_df: pd.DataFrame, outpath: str):
+    fig, ax1 = plt.subplots(figsize=(7.5, 4.5))
+    x = np.arange(len(kpi_df.index))
+    width = 0.35
+    ax1.bar(x - width / 2, kpi_df["Mean_Time_To_Ack_min"], width,
+            label="Mean Time to Acknowledge (min)", color="#2980B9")
+    ax1.set_ylabel("Minutes", color="#2980B9")
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(kpi_df.index)
+
+    ax2 = ax1.twinx()
+    ax2.bar(x + width / 2, kpi_df["Mean_Time_To_Resolve_hr"], width,
+            label="Mean Time to Resolve (hr)", color="#8E44AD")
+    ax2.set_ylabel("Hours", color="#8E44AD")
+
+    ax1.set_title("Response Speed vs Resolution Speed by Severity Tier")
+    fig.legend(loc="upper right", bbox_to_anchor=(0.9, 0.88))
+    plt.tight_layout()
+    plt.savefig(outpath, dpi=150)
+    plt.show()
+
+
+def plot_escalation_matrix_heatmap(outpath: str):
+    """A visual heat-map of the matrix itself: rows=severity, cols=response
+    metric. Colour encodes URGENCY (red = tightest deadline / most urgent,
+    green = most relaxed), normalised independently per column since the
+    three metrics live on very different scales (minutes vs. hours)."""
+    sevs = list(ESCALATION_MATRIX.keys())
+    labels = [s.label() for s in sevs]
+    metrics = ["Ack SLA (min)", "Auto-escalate (min)", "Resolution Target (hr)"]
+    raw = np.array([
+        [ESCALATION_MATRIX[s].ack_sla_minutes,
+         ESCALATION_MATRIX[s].auto_escalate_after_minutes,
+         ESCALATION_MATRIX[s].resolution_target_hours * 60]  # minutes, shared scale for normalisation only
+        for s in sevs
+    ], dtype=float)
+
+    # Per-column min-max normalisation, then invert so SMALLER (tighter) time
+    # -> urgency close to 1 (red); LARGER (more relaxed) time -> urgency close to 0 (green).
+    col_min = raw.min(axis=0)
+    col_max = raw.max(axis=0)
+    normalised = (raw - col_min) / (col_max - col_min + 1e-9)
+    urgency = 1 - normalised
+
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    im = ax.imshow(urgency, cmap="RdYlGn_r", aspect="auto", vmin=0, vmax=1)
+    ax.set_xticks(range(len(metrics)))
+    ax.set_xticklabels(metrics, rotation=15, ha="right")
+    ax.set_yticks(range(len(labels)))
+    ax.set_yticklabels(labels)
+    for i in range(len(labels)):
+        for j in range(len(metrics)):
+            val = raw[i, j]
+            txt = f"{val:.0f}" if j != 2 else f"{val/60:.0f}h"
+            # pick readable text colour against the cell's urgency shade
+            text_color = "white" if urgency[i, j] > 0.7 else "black"
+            ax.text(j, i, txt, ha="center", va="center", color=text_color, fontsize=9)
+    ax.set_title("Escalation Matrix Urgency Heat-map (red = most urgent)")
+    fig.colorbar(im, ax=ax, label="Relative urgency (per-column normalised)")
+    plt.tight_layout()
+    plt.savefig(outpath, dpi=150)
+    plt.show()
+
+
+def plot_escalation_funnel(df: pd.DataFrame, outpath: str):
+    total = len(df)
+    escalated = df["Escalated"].sum()
+    external = df["External Notification"].sum()
+    stages = ["Total Incidents", "Auto-Escalated\n(SLA breach)", "External\nNotification Triggered"]
+    values = [total, escalated, external]
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    bars = ax.barh(stages, values, color=["#34495E", "#E67E22", "#C0392B"])
+    ax.bar_label(bars, padding=3)
+    ax.invert_yaxis()
+    ax.set_title("Escalation Funnel Across the Simulated Incident Stream")
+    ax.set_xlabel("Number of Incidents")
+    plt.tight_layout()
+    plt.savefig(outpath, dpi=150)
+    plt.show()
+
+
+# ------------------------------------------------------------------------
+# 8. COMMUNICATION-FAILURE COMPARISON: matrix vs no-matrix (baseline)
+#    Demonstrates the "reduces delays and communication failures" claim
+#    quantitatively, by simulating a naive baseline (single flat queue,
+#    single channel, no auto-escalation) against the tiered framework.
+# ------------------------------------------------------------------------
+def simulate_baseline(n_incidents: int = 60, seed: int = 42) -> pd.DataFrame:
+    """A naive baseline: every incident, regardless of severity, sits in one
+    email queue and is handled first-come-first-served with a flat 60-minute
+    'best effort' SLA and no auto-escalation -- representative of many real
+    organisations before a formal matrix is introduced."""
+    random.seed(seed + 1)
+    np.random.seed(seed + 1)
+    start = datetime(2026, 1, 6, 9, 0)
+    severities = list(Severity)
+    weights = {Severity.SEV1_CRITICAL: 0.05, Severity.SEV2_HIGH: 0.15,
+               Severity.SEV3_MEDIUM: 0.35, Severity.SEV4_LOW: 0.45}
+    rows = []
+    for i in range(1, n_incidents + 1):
+        sev = random.choices(severities, weights=[weights[s] for s in severities])[0]
+        detected_at = start + timedelta(minutes=random.randint(0, 60 * 24 * 14))
+        flat_sla = 60  # single undifferentiated SLA, no severity-aware routing
+        ack_delay = max(1, np.random.exponential(scale=45))  # queued FCFS, noisy
+        breached = ack_delay > (ESCALATION_MATRIX[sev].ack_sla_minutes)  # judged against the *real* need
+        resolve_hours = np.random.gamma(shape=2.2, scale=ESCALATION_MATRIX[sev].resolution_target_hours / 1.6)
+        rows.append({
+            "Incident ID": f"BASE-{i:04d}",
+            "Initial Severity": sev.label(),
+            "Time to Ack (min)": round(ack_delay, 1),
+            "SLA Breached": bool(breached),
+            "Time to Resolve (h)": round(resolve_hours, 2),
+        })
+    return pd.DataFrame(rows)
+
+
+def plot_framework_comparison(matrix_df: pd.DataFrame, baseline_df: pd.DataFrame, outpath: str):
+    order = ["SEV-1 Critical", "SEV-2 High", "SEV-3 Medium", "SEV-4 Low"]
+    m = matrix_df.groupby("Initial Severity")["SLA Breached"].mean().reindex(order) * 100
+    b = baseline_df.groupby("Initial Severity")["SLA Breached"].mean().reindex(order) * 100
+
+    x = np.arange(len(order))
+    width = 0.35
+    fig, ax = plt.subplots(figsize=(8, 4.8))
+    ax.bar(x - width / 2, b.values, width, label="Baseline (flat queue, no matrix)", color="#95A5A6")
+    ax.bar(x + width / 2, m.values, width, label="Proposed Escalation Matrix", color="#2ECC71")
+    ax.set_xticks(x)
+    ax.set_xticklabels(order)
+    ax.set_ylabel("SLA Breach Rate (%)")
+    ax.set_title("SLA Breach Rate: Baseline vs Proposed Framework")
+    ax.legend()
+    plt.tight_layout()
+    plt.savefig(outpath, dpi=150)
+    plt.show()
+
+
+# ------------------------------------------------------------------------
+# 9. MAIN — run everything (this is what a single Colab cell executes)
+# ------------------------------------------------------------------------
+def main():
+    print("=" * 78)
+    print("ESCALATION MATRIX (design artifact)")
+    print("=" * 78)
+    matrix_df = print_escalation_matrix()
+    with pd.option_context("display.max_colwidth", 60, "display.width", 160):
+        print(matrix_df.to_string(index=False))
+
+    print("\n" + "=" * 78)
+    print("RUNNING SIMULATION")
+    print("=" * 78)
+    engine, df = simulate(n_incidents=60)
+    print(df.head(10).to_string(index=False))
+
+    print("\n" + "=" * 78)
+    print("KPI SUMMARY BY SEVERITY")
+    print("=" * 78)
+    kpi_df = compute_kpis(df)
+    print(kpi_df.to_string())
+
+    print("\n" + "=" * 78)
+    print("SAMPLE AUDIT TRAIL (first 15 entries)")
+    print("=" * 78)
+    for line in engine.audit_trail[:15]:
+        print(" -", line)
+
+    print("\nGenerating charts ...")
+    plot_incident_distribution(df, "chart_incident_distribution.png")
+    plot_sla_breach_rate(kpi_df, "chart_sla_breach_rate.png")
+    plot_ack_vs_resolve(kpi_df, "chart_ack_vs_resolve.png")
+    plot_escalation_matrix_heatmap("chart_matrix_heatmap.png")
+    plot_escalation_funnel(df, "chart_escalation_funnel.png")
+
+    baseline_df = simulate_baseline(n_incidents=60)
+    plot_framework_comparison(df, baseline_df, "chart_framework_comparison.png")
+
+    overall_breach_matrix = df["SLA Breached"].mean() * 100
+    overall_breach_baseline = baseline_df["SLA Breached"].mean() * 100
+    print(f"\nOverall SLA breach rate — baseline (no matrix): {overall_breach_baseline:.1f}%")
+    print(f"Overall SLA breach rate — proposed matrix      : {overall_breach_matrix:.1f}%")
+    print(f"Relative reduction in SLA breaches             : "
+          f"{100 * (overall_breach_baseline - overall_breach_matrix) / overall_breach_baseline:.1f}%")
+
+    df.to_csv("incident_log.csv", index=False)
+    matrix_df.to_csv("escalation_matrix.csv", index=False)
+    kpi_df.to_csv("kpi_summary.csv")
+    print("\nSaved: incident_log.csv, escalation_matrix.csv, kpi_summary.csv, chart_*.png")
+
+    return matrix_df, df, kpi_df, baseline_df
+
+
+if __name__ == "__main__":
+    main()
