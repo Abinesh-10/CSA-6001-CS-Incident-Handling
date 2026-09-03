@@ -1,0 +1,115 @@
+                                                                                                                                                                                                                       
+┌──(kali㉿kali)-[~]
+└─$ cat lab3_output.txt
+Script started on 2026-08-10 00:31:31-04:00 [TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="215" LINES="49"]
+┌──(kali㉿kali)-[~]
+└─$ cd ~/Desktop                  
+                                                                                                                                                                                                                       
+┌──(kali㉿kali)-[~/Desktop]
+└─$ mkdir False_Positive_Lab 
+                                                                                                                                                                                                                       
+┌──(kali㉿kali)-[~/Desktop]
+└─$ cd False_Positive_Lab
+                                                                                                                                                                                                                       
+┌──(kali㉿kali)-[~/Desktop/False_Positive_Lab]
+└─$ pwd            
+/home/kali/Desktop/False_Positive_Lab
+                                                                                                                                                                                                                       
+┌──(kali㉿kali)-[~/Desktop/False_Positive_Lab]
+└─$ nano alerts.csv
+                                                                                                                                                                                                                       
+┌──(kali㉿kali)-[~/Desktop/False_Positive_Lab]
+└─$ nano alert_analysis.py
+                                                                                                                                                                                                                       
+┌──(kali㉿kali)-[~/Desktop/False_Positive_Lab]
+└─$ ls
+alert_analysis.py  alerts.csv
+                                                                                                                                                                                                                                                                                                                                                                                           
+┌──(kali㉿kali)-[~/Desktop/False_Positive_Lab]
+└─$ python3 --version
+Python 3.13.9
+                                                                                                                                                                                                                                                                                                                                                                                                                                              
+┌──(kali㉿kali)-[~/Desktop/False_Positive_Lab]
+└─$ python3 -m venv venv
+                                                                                                                                                                                                                       
+┌──(kali㉿kali)-[~/Desktop/False_Positive_Lab]
+└─$ source venv/bin/activate
+                                                                                                                                                                                                                       
+┌──(venv)─(kali㉿kali)-[~/Desktop/False_Positive_Lab]
+└─$ pip install pandas scikit-learn
+Collecting pandas
+  Using cached pandas-3.0.5-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (79 kB)
+Collecting scikit-learn
+  Downloading scikit_learn-1.9.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (11 kB)
+Collecting numpy>=1.26.0 (from pandas)
+  Downloading numpy-2.5.2-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (6.6 kB)
+Collecting python-dateutil>=2.8.2 (from pandas)
+  Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+Collecting scipy>=1.10.0 (from scikit-learn)
+  Downloading scipy-1.18.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (62 kB)
+Collecting joblib>=1.4.0 (from scikit-learn)
+  Downloading joblib-1.5.3-py3-none-any.whl.metadata (5.5 kB)
+Collecting narwhals>=2.0.1 (from scikit-learn)
+  Downloading narwhals-2.24.0-py3-none-any.whl.metadata (15 kB)
+Collecting threadpoolctl>=3.5.0 (from scikit-learn)
+  Downloading threadpoolctl-3.6.0-py3-none-any.whl.metadata (13 kB)
+Collecting six>=1.5 (from python-dateutil>=2.8.2->pandas)
+  Using cached six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Using cached pandas-3.0.5-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (10.9 MB)
+Downloading scikit_learn-1.9.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (9.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9.1/9.1 MB 4.4 MB/s  0:00:02
+Downloading joblib-1.5.3-py3-none-any.whl (309 kB)
+Downloading narwhals-2.24.0-py3-none-any.whl (461 kB)
+Downloading numpy-2.5.2-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (16.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.7/16.7 MB 3.1 MB/s  0:00:05
+Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+Downloading scipy-1.18.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (35.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 35.3/35.3 MB 2.8 MB/s  0:00:12
+Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+Downloading threadpoolctl-3.6.0-py3-none-any.whl (18 kB)
+Installing collected packages: threadpoolctl, six, numpy, narwhals, joblib, scipy, python-dateutil, scikit-learn, pandas
+Successfully installed joblib-1.5.3 narwhals-2.24.0 numpy-2.5.2 pandas-3.0.5 python-dateutil-2.9.0.post0 scikit-learn-1.9.0 scipy-1.18.0 six-1.17.0 threadpoolctl-3.6.0
+                                                                                                                                                                                                                       
+┌──(venv)─(kali㉿kali)-[~/Desktop/False_Positive_Lab]
+└─$ python -c "import pandas; import sklearn; print('Libraries installed successfully')"
+Libraries installed successfully
+                                                                                                                                                                                                                       
+┌──(venv)─(kali㉿kali)-[~/Desktop/False_Positive_Lab]
+└─$ python alert_analysis.py
+===== FALSE POSITIVE & TRUE INCIDENT ANALYSIS =====
+
+Dataset Loaded Successfully
+
+   alert_id predicted_label actual_label
+0         1          Attack       Attack
+1         2          Attack       Normal
+2         3          Normal       Attack
+3         4          Attack       Attack
+4         5          Normal       Normal
+5         6          Attack       Attack
+6         7          Normal       Normal
+7         8          Attack       Normal
+8         9          Normal       Attack
+9        10          Normal       Normal
+
+-----------------------------------
+
+Confusion Matrix Values:
+True Positive (TP): 3
+False Positive (FP): 2
+False Negative (FN): 2
+True Negative (TN): 3
+
+-----------------------------------
+
+Performance Metrics:
+Precision: 0.60
+Recall: 0.60
+Accuracy: 0.60
+
+Analysis Completed Successfully.
+                                                                                                                                                                                                                       
+┌──(venv)─(kali㉿kali)-[~/Desktop/False_Positive_Lab]
+└─$ exit
+
+Script done on 2026-08-10 00:40:47-04:00 [COMMAND_EXIT_CODE="0"]
